@@ -1,0 +1,27 @@
+10 in
+20 if eof
+25 go 100
+30 right
+40 go 10
+
+100 left
+101 if eof
+102 go 200
+111 if nl
+112 go 200
+113 go 100
+
+200 right
+201 if eof
+202 go 300
+210 out
+211 if nl
+212 go 300
+213 go 200
+
+300 left
+301 if eof
+302 go 1000
+311 if nl
+312 go 100
+313 go 300

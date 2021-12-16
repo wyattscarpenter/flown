@@ -1,0 +1,12 @@
+#!./a.out
+10 in
+20 if eof
+25 go 100
+30 right
+40 go 10
+
+100 left
+110 out
+120 if eof
+125 go 200
+140 go 100

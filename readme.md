@@ -67,28 +67,28 @@ REMARK read in entire input
 REMARK seek left to beginning of string
 100 left
 101 if eof
-102 goto 200
-101 if nl
-102 goto 200
-103 goto 100
+102 go 200
+111 if nl
+112 go 200
+113 go 100
 
 REMARK print
 REMARK care is taken not to actually write an EOF out
 200 right
 201 if eof
-202 goto 300
+202 go 300
 210 out
 211 if nl
-212 goto 300
-213 goto 200
+212 go 300
+213 go 200
 
 REMARK seek left to trailing nl of previous line (if it's the beginning of the input, exit)
 300 left
 301 if eof
-302 goto 1000
-301 if nl
-302 goto 100
-303 goto 300
+302 go 1000
+311 if nl
+312 go 100
+313 go 300
 
 
 REMARK exit
