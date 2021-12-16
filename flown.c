@@ -40,10 +40,14 @@ int main(int argc, char **argv){
   char new_word = 1;
   char header_done = 0;
   while((c=fgetc(file))!= (unsigned char)EOF){
-    if(!header_done&&(c<48||c>57)){continue;} else {header_done=1;} //to avoid unicode BOMs and shebangs, we now ignore anything but 0-9 until the first 0-9.
+    if(!header_done&&(c<48||c>57)){continue;} else {header_done=1;} //to avoid unicode BOMs we now ignore anything but 0-9 until the first 0-9.
     resume:
     //dprintf("\n\n c = %d, index_buffer %u", c, index_buffer);
-    if(c=='\n') { //this is a very heavily line-oriented parser now I guess.
+
+    if (c=='#') {
+      do{c=fgetc(file);}while(!(c=='\n'||c==(unsigned char)EOF)); //eat characters until end of line or file
+      if(c=='\n'){goto resume;} //then resume with the newline if applicable
+    } else if(c=='\n') { //this is a very heavily line-oriented parser now I guess.
       state = index;
       index_buffer = 0;
       new_word = 1;

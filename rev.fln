@@ -1,4 +1,4 @@
-#!./a.out
+#!./flown
 10 in
 20 if eof
 25 go 100

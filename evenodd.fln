@@ -1,0 +1,19 @@
+#even (starting with 0)
+10 in
+20 if eof
+30 go 200
+40 go 50
+
+#odd
+50 in
+60 if eof
+70 go 100
+80 go 10
+
+#print result for odd
+100 out
+110 go 300 # we already have an eof so we can just print
+
+#print result for even
+200 right #just go one right to get a blank
+210 out

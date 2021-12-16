@@ -1,0 +1,18 @@
+10 in
+20 if f
+30 go 100
+40 if g
+50 go 100
+60 if eof
+70 go 200
+80 go 10
+
+100 in
+110 if eof
+111 go 150
+112 go 100
+150 out
+160 go 300
+
+200 right
+210 out

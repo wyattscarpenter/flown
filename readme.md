@@ -10,24 +10,26 @@ IN
 OUT
 LEFT
 RIGHT
-IF (character)
-GO (index)
+IF character
+GO index
 ```
 
-Conceptually, FLOWN uses as its working memory (but not its instruction memory) an infinite symbol tape (note: for implementation reasons it's more like an INT_MAX symbol tape) like a Turing machine's. There is a "tape head" whose position is known as the "current tape cell". The tape head starts at the left of the tape. The tape starts filled with the numerical value 0. Conceptually, you start at the "first" tape cell on the right, and the "zeroth" tape cell has an EOF in it, for convenience. Going off the edge of the tape is undefined in this specification, and I haven't checked what happens. Also, going to the zeroth tape cell is undefined; that's right, I'm taking away the convenience immediately, because it made me nervous.
+Conceptually, FLOWN uses as its working memory (but not its instruction memory) an infinite symbol tape (note: for implementation reasons it's more like an INT_MAX symbol tape) like a Turing machine's. There is a "tape head" whose position is known as the "current tape cell". The tape head starts at the left of the tape. The tape starts filled with the numerical value 0. Conceptually, you start at the "first" tape cell on the right, and the "zeroth" tape cell has an EOF in it, for convenience. tac.fln, below, is a motivating example for why this is convenient. Going off the edge of the tape is undefined in this specification, and I haven't checked what happens.
 
 `IN` reads a symbol from standard input to the current tape cell (note: this will overwrite any current contents).
 `OUT` writes a symbol from the current tape cell to standard output (note: the symbol is not erased from the tape cell).
 `LEFT` advances the tape head one cell to the left (note: advancing left off the left end of the tape is Undefined Behavior).
 `RIGHT` advances the tape head one cell to the right (note: advancing right off the right end of the tape is Undefined Behavior).
-`IF` (character) executes the next (by numerical index, skipping empty instructions) statement if the value of the current tape cell is equal to (character); else, execution jumps to the overnext instruction. The character is written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
+`IF` (character) executes the next (by numerical index, skipping empty instructions) statement if the value of the current tape cell is equal to (character); else, execution jumps to the overnext instruction.
 `GO` (index) jumps to the index and begins executing at that index.
 
-NOTE: the eof character is equal to 0xFF aka 255 aka a full byte, so reading this byte will look exactly like having read the end of the input. Also, the blank character is equal to 0x00 aka 0 aka an empty byte, so writing this byte will look exactly like having written nothing. You can absolutely forbid these characters from appearing in your inputs, or you can write in clever little loops to ignore them yourself.
+Characters characters are written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
+
+The eof character is equal to 0xFF aka 255 aka a full byte, so reading this byte will look exactly like having read the end of the input. Also, the blank character is equal to 0x00 aka 0 aka an empty byte, so writing this byte will look exactly like having written nothing. You can absolutely forbid these characters from appearing in your inputs, or you can write in clever little loops to ignore them yourself.
 
 All statements must be numbered a la basic. The program begins executing statement 0. After executing a (non-GO) statement (or ignoring an empty statement), the statement counter increments by 1 and executes (or ignores, as appropriate) the statement currently referenced by the statement counter. Execution ends when the statement counter is set to a number greater than all defined statements.
 
-There is at this time one preprocessor, or METAFLOWN, statement: REMARK. This lets you leave comments about the code. The entire remark, beginning at the R and up to the end of the line, is ignored.
+There is at this time one preprocessor, or METAFLOWN, symbol: #. This lets you leave remarks in the flown code. The entire remark, beginning at the # and up to the end of the line, is ignored. You should be able to shebang flown scripts to wherever you keep the flown executable, it does seem to work.
 
 Here are some example programs:
 
@@ -57,14 +59,14 @@ rev.fln (outputs the input reversed)
 
 tac.fln (prints full lines in reverse order)
 ```
-REMARK read in entire input
+# read in entire input
 10 in
 20 if eof
 25 go 100
 30 right
 40 go 10
 
-REMARK seek left to beginning of string
+# seek left to beginning of string
 100 left
 101 if eof
 102 go 200
@@ -72,8 +74,8 @@ REMARK seek left to beginning of string
 112 go 200
 113 go 100
 
-REMARK print
-REMARK care is taken not to actually write an EOF out
+# print
+# care is taken not to actually write an EOF out
 200 right
 201 if eof
 202 go 300
@@ -82,7 +84,7 @@ REMARK care is taken not to actually write an EOF out
 212 go 300
 213 go 200
 
-REMARK seek left to trailing nl of previous line (if it's the beginning of the input, exit)
+# seek left to trailing nl of previous line (if it's the beginning of the input, exit)
 300 left
 301 if eof
 302 go 1000
@@ -91,14 +93,59 @@ REMARK seek left to trailing nl of previous line (if it's the beginning of the i
 313 go 300
 
 
-REMARK exit
+# exit
 1000
 ```
 
-110.fln (implements rule110. requires an input stream of the initial state in 1s and 0s, then runs forever until externally halted.)
+124.fln (implements rule110—well, actually, implements the mirror image version, 124, because our tape is left-bounded so that's more convenient. requires an input stream of the initial state in 1s and 0s terminated with a single newline or other separator character, then runs forever until externally halted.)
 ```
 TODO
 ```
+
+fg.fln (the first example in the original FLOW paper is about detecting whether a text has an f or g in it. Here we output eof if true and blank if false)
+```
+10 in
+20 if f
+30 go 100
+40 if g
+50 go 100
+60 if eof
+70 go 200
+80 go 10
+
+100 in
+110 if eof
+111 go 150
+112 go 100
+150 out
+160 go 300
+
+200 right
+210 out
+```
+evenodd.fln (the first second example in the original FLOW paper is about detecting whether a text has an even or odd number of characters. Here we output eof if odd and blank if even)
+```
+#even (starting with 0)
+10 in
+20 if eof
+30 go 200
+40 go 50
+
+#odd
+50 in
+60 if eof
+70 go 100
+80 go 10
+
+#print result for odd
+100 out
+110 go 300 # we already have an eof so we can just print
+
+#print result for even
+200 right #just go one right to get a blank
+210 out
+```
+
 It would probably make the programming language better if we had something like the IT variable from FLOW and let you write arbitrary characters to the tape, but whatever. You may notice that it is (usually) impossible for this programming language to output any characters that aren't in the input; this is, uh, a security feature.
 
 The parser of this program is fairly brittle and unhelpful because I didn't want to spend a lot of time on this. If I had to do it over again, I would probably do it in a more modern language. I chose to do it in C because of how easy it is to work with plain byte arrays in C, but I think the better convenience functions / string handling of modern languages would have been worth the loss of conceptual banebonedness. Also, if this were a REAL programming language, making real executables would be an advantage of C, but as it stands I probably should have done this in javascript anyway just so I could have a web-based demo for this toy language.
@@ -112,3 +159,5 @@ FLOWN is trivially Turing-complete. Here's why:
 * The FLOWN program is the finite state table.
 
 Giving the program an infinite supply of eofs after the input is done was an interesting but necessary (therefore I don't feel bad about it—my hand was forced! Albeit forced by my other design decisions.) design choice. Firstly, I hate look-before-you-leap programming, so in FLOWN one has to write the eof character to the tape to check it. rev.fln, above, shows the computational/theoretical/practical necessity of presenting the eof symbol instead of just, say, crashing on attempt to read after input end, which I admit I would find pretty funny. I think technically you could get away with crashing if you had a non-deterministic FLOWN machine, or NFLOWN, the same way a Nondeterministic Pushdown Automata (NPDA) can recognize all even-length palindromes but a Deterministic Pushdown Automata can't.
+
+You may want to pipe the output of some flown programs to the unix utility `less`, as it will automatically display the nonprinting characters of eof and blank.
