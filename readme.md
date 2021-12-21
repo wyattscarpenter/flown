@@ -14,22 +14,35 @@ IF character
 GO index
 ```
 
+These statements are not case-sensitive, so, eg, 'if' works just as well as 'IF'.
+
 Conceptually, FLOWN uses as its working memory (but not its instruction memory) an infinite symbol tape (note: for implementation reasons it's more like an INT_MAX symbol tape) like a Turing machine's. There is a "tape head" whose position is known as the "current tape cell". The tape head starts at the left of the tape. The tape starts filled with the numerical value 0. Conceptually, you start at the "first" tape cell on the right, and the "zeroth" tape cell has an EOF in it, for convenience. tac.fln, below, is a motivating example for why this is convenient. Going off the edge of the tape is undefined in this specification, and I haven't checked what happens.
 
 `IN` reads a symbol from standard input to the current tape cell (note: this will overwrite any current contents).
+
 `OUT` writes a symbol from the current tape cell to standard output (note: the symbol is not erased from the tape cell).
+
 `LEFT` advances the tape head one cell to the left (note: advancing left off the left end of the tape is Undefined Behavior).
+
 `RIGHT` advances the tape head one cell to the right (note: advancing right off the right end of the tape is Undefined Behavior).
+
 `IF` (character) executes the next (by numerical index, skipping empty instructions) statement if the value of the current tape cell is equal to (character); else, execution jumps to the overnext instruction.
+
 `GO` (index) jumps to the index and begins executing at that index.
 
 Characters characters are written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
 
 The eof character is equal to 0xFF aka 255 aka a full byte, so reading this byte will look exactly like having read the end of the input. Also, the blank character is equal to 0x00 aka 0 aka an empty byte, so writing this byte will look exactly like having written nothing. You can absolutely forbid these characters from appearing in your inputs, or you can write in clever little loops to ignore them yourself.
 
-All statements must be numbered a la basic. The program begins executing statement 0. After executing a (non-GO) statement (or ignoring an empty statement), the statement counter increments by 1 and executes (or ignores, as appropriate) the statement currently referenced by the statement counter. Execution ends when the statement counter is set to a number greater than all defined statements.
+All statements must be numbered a la basic. The program begins executing statement 1. After executing a (non-GO) statement (or ignoring an empty statement), the statement counter increments by 1 and executes (or ignores, as appropriate) the statement currently referenced by the statement counter. Execution ends when the statement counter is set to a number greater than all defined statements.
 
-There is at this time one preprocessor, or METAFLOWN, symbol: #. This lets you leave remarks in the flown code. The entire remark, beginning at the # and up to the end of the line, is ignored. You should be able to shebang flown scripts to wherever you keep the flown executable, it does seem to work.
+There is at this time one preprocessor, or METAFLOWN, symbol: #. This lets you leave remarks (also known as comments) in the flown code. The entire remark, beginning at the # and up to the end of the line, is ignored. Note: if used as the argument in an if statement, the # will be interpreted literally, and will not trigger a remark. Example:
+
+```
+100 if # #The first hashmark will be interpreted literally, but the second starts this remark.
+```
+
+In an environment with shebangs, like posix scripting, you should be able to shebang flown scripts to wherever you keep the flown executable; in my tests it does seem to work.
 
 Here are some example programs:
 
@@ -97,10 +110,9 @@ tac.fln (prints full lines in reverse order)
 1000
 ```
 
-124.fln (implements rule110—well, actually, implements the mirror image version, 124, because our tape is left-bounded so that's more convenient. requires an input stream of the initial state in 1s and 0s terminated with a single newline or other separator character, then runs forever until externally halted.)
-```
-TODO
-```
+124.fln (implements rule110—well, actually, implements the mirror image version, 124, because our tape is left-bounded so that's more convenient. requires an input stream of the initial state in 1s and 0s terminated with a single newline or other separator character, then runs forever until externally halted. 1s are output as eofs, 0s and blanks, and the separator as itself.)
+
+This is too long for the readme, see the file.
 
 fg.fln (the first example in the original FLOW paper is about detecting whether a text has an f or g in it. Here we output eof if true and blank if false)
 ```

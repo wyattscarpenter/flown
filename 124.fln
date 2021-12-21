@@ -1,0 +1,60 @@
+#rule 124:
+#111: 0
+#011: 1
+#101: 1
+#001: 0
+#011: 1
+#010: 1
+#100: 1
+#000: 0
+
+#internal encoding is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton
+# I'm thinking the internal encoding is blank blank 0, eof eof 1, eof blank beginning-of-the-universe mark, blank eof end-of-the-universe mark,
+# the external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou.
+
+#read in the input
+10 in
+20 if eof
+25 go 100
+30 out
+40 go 10
+
+#TODO: have to include separator character in here eventually
+
+#translate the input
+#check if we're done already
+50 left
+51 if eof
+52 go 1000 # move on to the next phase. or else, fall through to another transcription cycle.
+#go back to the left edge
+100 left
+110 if eof
+111 go 200
+112 go 100
+200 right # get on the first of the remaining input
+if 1
+go 300
+if 0
+go 400
+go 500
+
+300 # we've read a 1
+310 out #overwrite to keep our place for next time
+ #go right until the next untouched square (end of the universe marker?) (if so, then bump the eou)
+ #write a 1 (eof eof I guess)
+ #go back to end of input
+ #begin again
+ 
+400 #we've read a 0
+410 out #overwrite to keep our place for next time
+ #go right until the next untouched square (end of the universe marker?) (if so, then bump the eou)
+ #write a 0 (blank blank I guess)
+ #go back to end of input
+ #begin again
+
+500 #we've read something else
+#??? Unless this is the newline...
+
+#TODO later, after proof of concept transcription printing: 
+1000
+#iterate forever, baby!
