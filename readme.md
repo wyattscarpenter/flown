@@ -30,7 +30,7 @@ Conceptually, FLOWN uses as its working memory (but not its instruction memory) 
 
 `GO` (index) jumps to the index and begins executing at that index.
 
-Characters characters are written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
+Characters are written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
 
 The eof character is equal to 0xFF aka 255 aka a full byte, so reading this byte will look exactly like having read the end of the input. Also, the blank character is equal to 0x00 aka 0 aka an empty byte, so writing this byte will look exactly like having written nothing. You can absolutely forbid these characters from appearing in your inputs, or you can write in clever little loops to ignore them yourself.
 

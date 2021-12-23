@@ -11,9 +11,11 @@
 80 go 10
 
 #print result for odd
+# we already have an eof so we can just print
 100 out
-110 go 300 # we already have an eof so we can just print
+110 go 300
 
 #print result for even
-200 right #just go one right to get a blank
+#just go one right to get a blank
+200 right
 210 out
