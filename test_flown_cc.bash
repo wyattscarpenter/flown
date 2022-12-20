@@ -28,19 +28,3 @@ test
 1"
 
 rm flown
-
-<<<HEREDOC #this got too complex
-
-echo Testing flown commands.
-test_string = `printf "\ntest\nrun\n"`
-echo Test string: "$test_string"
-
-echo Testing cat.fln.
-expect_cat="
-test
-run
-"
-real_cat=`echo "$test_string" | ./flown cat.fln <test_string.txt`
-if [  "$real_cat" == "$expect_cat" ] ; then echo OK. ; 
-
-HEREDOC
