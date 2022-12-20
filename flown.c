@@ -3,14 +3,16 @@
 #include <limits.h>
 #include <string.h>
 
-//The limiting factor here is the Windows C compiler, cl. Cl helpfully tells us: "total size of array must not exceed 0x7fffffff bytes" (which happens to be INT_MAX)
+//The limiting factor for the arrays here is the Windows C compiler, cl. Cl helpfully tells us: "total size of array must not exceed 0x7fffffff bytes" (which happens to be INT_MAX)
 //gcc is fine with UINT_MAX length (not bytes, number of elements). Exceeding that: "error: size of array ‘array’ is too large"
 //and TCC works at some point lower than INT_MAX but higher than INT_MAX/2, (unclear if bytes or length) so we have chosen to ignore it here. "error: internal error: relocation failed"
-unsigned char tape[INT_MAX];
 
-unsigned char instructions[INT_MAX/4];
+//cl also started giving me "LINK : fatal error LNK1248: image size (C0025000) exceeds maximum allowable size (80000000)" errors at some point, or random "Access is denied." errors when attempting runs, so I adjusted down based on that.
+unsigned char tape[INT_MAX/2];
 
-unsigned int instruction_arguments[INT_MAX/8];
+unsigned char instructions[USHRT_MAX];
+
+unsigned short instruction_arguments[USHRT_MAX];
 
 int main(int argc, char **argv){
   char debug = 0;
@@ -32,9 +34,12 @@ int main(int argc, char **argv){
   dprintf("%s", "open the file\n");
   FILE *file = fopen(argv[file_index_in_argv],"r");
   if(!file){
-     puts("input file");
-     puts(argv[file_index_in_argv]);
-     puts("can't be opened for reading, probably doesn't exist.");
+     printf("Input file %s can't be opened for reading, probably doesn't exist.\n", argv[file_index_in_argv]);
+     if(!strcmp(argv[file_index_in_argv],"-d")){
+       puts("Hey! It looks like you've specified -d without a flown script file, causing -d to be interpreted as the file name. You probably didn't mean to do that. Let me remind you:");
+       puts("USAGE: input | flown [-d] script.fln | output");
+       return -3;
+     }
      return -2;
   }
   dprintf("%s\n", "parse");
@@ -107,12 +112,14 @@ int main(int argc, char **argv){
   tape[0] = EOF;
   unsigned char skip = 0;
   for(unsigned int i = 1; i<=highest_instruction_index; i++){ //we used to stop at sizeof(instructions)/sizeof(instructions[0]) but this caused a little lag.
-    instructions[i] && !skip && dprintf("%04u: %c argument: %03d. tapehead (position %03u) on the letter %03u, \n", i, instructions[i], instruction_arguments[i], tapehead, tape[tapehead]); //print out the program for debug purposes
+    instructions[i] && !skip && dprintf("%04u: %c(%d). tapehead (position %u) on the letter %u, \n", i, instructions[i], instruction_arguments[i], tapehead, tape[tapehead]); //print out the program for debug purposes
+    //this would probably make way more sense if I tracked the rightmost point the tapehead has ever gone, and print the tape up to and only up to that point, but I couldn't be bothered.
+    if(instructions[i] && !skip) { for(int t=1; tape[t] ; t++ ){dprintf("%c",tape[t]);}dprintf("\n"); }
     if(instructions[i] && skip){ skip--; continue; }
     switch (tolower(instructions[i])){ //this is case insensitive
       case 'n':
         tape[tapehead] = getchar();
-        dprintf("Getchar! %c, %d\n", tape[tapehead], tape[tapehead]);
+        dprintf("Getchar! '%c', %d\n", tape[tapehead], tape[tapehead]);
       break;
       case 'u':
         putchar(tape[tapehead]);

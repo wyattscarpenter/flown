@@ -18,17 +18,20 @@ These statements are not case-sensitive, so, eg, 'if' works just as well as 'IF'
 
 Conceptually, FLOWN uses as its working memory (but not its instruction memory) an infinite symbol tape (note: for implementation reasons it's more like an INT_MAX symbol tape) like a Turing machine's. There is a "tape head" whose position is known as the "current tape cell". The tape head starts at the left of the tape. The tape starts filled with the numerical value 0. Conceptually, you start at the "first" tape cell on the right, and the "zeroth" tape cell has an EOF in it, for convenience. tac.fln, below, is a motivating example for why this is convenient. Going off the edge of the tape is undefined in this specification, and I haven't checked what happens.
 
-`IN` reads a symbol from standard input to the current tape cell (note: this will overwrite any current contents).
+`IN` reads a symbol from standard input to the current tape cell. This will overwrite any current contents.
 
-`OUT` writes a symbol from the current tape cell to standard output (note: the symbol is not erased from the tape cell).
+`OUT` writes a symbol from the current tape cell to standard output. The symbol is not erased from the tape cell.
 
-`LEFT` advances the tape head one cell to the left (note: advancing left off the left end of the tape is Undefined Behavior).
+`LEFT` advances the tape head one cell to the left. Advancing left off the left end of the tape is Undefined Behavior.
 
-`RIGHT` advances the tape head one cell to the right (note: advancing right off the right end of the tape is Undefined Behavior).
+`RIGHT` advances the tape head one cell to the right. Advancing right off the right end of the tape is Undefined Behavior.
 
-`IF` (character) executes the next (by numerical index, skipping empty instructions) statement if the value of the current tape cell is equal to (character); else, execution jumps to the overnext instruction.
+`IF character` executes the next (by numerical index, skipping empty instructions) statement if the value of the current tape cell is equal to the character; else, execution jumps to the overnext instruction.
 
-`GO` (index) jumps to the index and begins executing at that index.
+`GO index` jumps to the index and begins executing at that index.
+
+(The attentive reader may notice that because `go` and `if` both jump, this instruction set is not minimal in number of keywords; for instance, I could have made `GOIF character index elseindex`. However, this ergonomic choice is intentional on my part; I could also have combined all instructions into a single, turing-complete instruction, which we might call `IOLRIG`. Don't believe me? In x86, the `mov` instruction is turing-complete, hence mov Doom https://github.com/xoreaxeaxeax/movfuscator/tree/master/validation/doom. See also:
+"Only rank amateurs rely on general-purpose if statements. Veteran programmers prefer the elegant Turing completeness of the "Subtract and Branch if Not equal to Zero" instruction, SBNZ." —Anonymous)
 
 Characters are written out literally in source code, except for these special characters: nl = newline character ('\n'), sp = space character (' '), eof = end-of-file indicator (EOF), blank = null character ('\0').
 
@@ -110,7 +113,7 @@ tac.fln (prints full lines in reverse order)
 1000
 ```
 
-124.fln (implements rule110—well, actually, implements the mirror image version, 124, because our tape is left-bounded so that's more convenient. requires an input stream of the initial state in 1s and 0s terminated with a single newline or other separator character, then runs forever until externally halted. 1s are output as eofs, 0s and blanks, and the separator as itself.)
+124.fln (demonstrates turing-completeness by implementing rule110—well, actually, implements the mirror image version, 124, because our tape is left-bounded so that's more convenient. requires an input stream of the initial state in 1s and 0s terminated with a single newline or other separator character, then runs forever until externally halted. 1s are output as eofs, 0s and blanks, and the separator as itself.)
 
 This is too long for the readme, see the file.
 

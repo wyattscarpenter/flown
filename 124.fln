@@ -1,60 +1,107 @@
-#rule 124:
+#rule 124, the horizontal reflection of rule 110 (and thus, is bounded on the lefthand side):
 #111: 0
 #011: 1
 #101: 1
 #001: 0
-#011: 1
+#110: 1
 #010: 1
 #100: 1
 #000: 0
+#For more information, see https://mathworld.wolfram.com/Rule110.html and https://en.wikipedia.org/wiki/Rule_110#Interesting_properties
 
-#internal encoding is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton
-# I'm thinking the internal encoding is blank blank 0, eof eof 1, eof blank beginning-of-the-universe mark, blank eof end-of-the-universe mark,
-# the external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou.
+#The internal encoding is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton. At least the tape is full of 0s to start with, so we don't need to explicitly populate the eou.
+# Internal symbol encoding:
+#blank blank: end-of-the-universe mark (eou)
+#eof eof: 1
+#eof blank: 0
+# I could use blank eof for an invalidated/old eou (I might have to introduce bou notation again, so the first pass of the internally-encoded process doesn't need to have special logic :thinking:), but I'll probably just use eof eof for convenience.
+# The external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou.
 
-#read in the input
+#read in the input (until a non-1-or-0 separator character is found)
 10 in
-20 if eof
-25 go 100
-30 out
-40 go 10
-
-#TODO: have to include separator character in here eventually
+11 out #debugging statement
+#check it
+20 if 0
+21 go 30
+22 if 1
+23 go 30
+25 go 100 # we found the separator, move on!
+# advance input loop
+30 right
+31 go 10
 
 #translate the input
-#check if we're done already
-50 left
-51 if eof
-52 go 1000 # move on to the next phase. or else, fall through to another transcription cycle.
 #go back to the left edge
 100 left
 110 if eof
 111 go 200
 112 go 100
 200 right # get on the first of the remaining input
-if 1
-go 300
-if 0
-go 400
-go 500
+210 if 1
+220 go 300
+230 if 0
+240 go 400
+250 go 500
 
 300 # we've read a 1
-310 out #overwrite to keep our place for next time
- #go right until the next untouched square (end of the universe marker?) (if so, then bump the eou)
- #write a 1 (eof eof I guess)
- #go back to end of input
- #begin again
+310 in #overwrite to keep our place for next time
+#go right until the eou, making sure to skip over blanks in the 0-complexes
+320 right
+321 if blank
+322 go 350 #this is the eou, we're on the first cell of its two-cell complex
+330 if eof #non-eou complex
+331 right
+332 go 320 #non-eou non-complex, so we'll just skip one, like regular
+
+350 in #we found eou, write a 1 (eof eof)
+351 right
+352 in
+
+360 go 800
  
 400 #we've read a 0
-410 out #overwrite to keep our place for next time
- #go right until the next untouched square (end of the universe marker?) (if so, then bump the eou)
- #write a 0 (blank blank I guess)
- #go back to end of input
- #begin again
+410 in #overwrite to keep our place for next time
+#go right until the eou, making sure to skip over blanks in the 0-complexes
+420 right
+421 if blank
+422 go 450 #this is the eou, we're on the first cell of its two-cell complex
+430 if eof #non-eou complex
+431 right
+432 go 420 #non-eou non-complex, so we'll just skip one, like regular
 
-500 #we've read something else
-#??? Unless this is the newline...
+450 in #we found eou, write a 0 (eof blank)
+451 right
+452 #blank
 
-#TODO later, after proof of concept transcription printing: 
-1000
-#iterate forever, baby!
+460 go 800
+
+500 go 1000 #we've read the newline... that means we're done translating
+
+800 left
+801 if eof
+802 go 800
+803 if blank
+804 go 800
+#we must be at the separator
+#check if we've already translated every character
+820 go 100
+
+#print the line
+#I started on the sep, maybe I'll revise that later
+1000 right #now we're on the first complex character
+1002 if blank
+1010 go 1110 #we hit the eou, so we must go back on the tape to print sep
+1011 right
+1012 out #this will be blank for 0 and eof for 1
+1020 go 1000 #loop
+
+1110 left
+1120 if eof
+1121 go 1110
+1130 if blank
+1131 go 1110
+1140 out #we must have reached the sep here.
+
+#I guess we exit then lol
+
+#TODO: iterate forever, baby!
