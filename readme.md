@@ -47,6 +47,8 @@ There is at this time one preprocessor, or METAFLOWN, symbol: #. This lets you l
 
 In an environment with shebangs, like posix scripting, you should be able to shebang flown scripts to wherever you keep the flown executable; in my tests it does seem to work.
 
+I probably would have added more metaflown commands but honestly I don't want to modify the parser (which is hairy) or add another compile step. Even though adding multi-cell if would be useful, and implementing functions would be fun.
+
 Here are some example programs:
 
 cat.fln (just outputs its input, like piping to the unix utility cat)

@@ -1,3 +1,5 @@
+#this program takes an input of 1s and 0s, then a row-separator character of your choice, which may not be 0, 1, 0x00 or 0xFF (newline is a good choice). It outputs infinitely many rows of 0x00 and 0xFF characters, separated by your specified row-separator, in accordance with rule 124, the horizontal reflection of rule 110 (see https://mathworld.wolfram.com/Rule110.html )
+
 #rule 124, the horizontal reflection of rule 110 (and thus, is bounded on the lefthand side):
 #111: 0
 #011: 1
@@ -9,12 +11,13 @@
 #000: 0
 #For more information, see https://mathworld.wolfram.com/Rule110.html and https://en.wikipedia.org/wiki/Rule_110#Interesting_properties
 
-#The internal encoding is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton. At least the tape is full of 0s to start with, so we don't need to explicitly populate the eou.
+#The internal encoding ("complex characters") is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton. At least the tape is full of 0s to start with, so we don't need to explicitly populate the eou.
 # Internal symbol encoding:
 #blank blank: end-of-the-universe mark (eou)
 #eof eof: 1
 #eof blank: 0
-# I could use blank eof for an invalidated/old eou (I might have to introduce bou notation again, so the first pass of the internally-encoded process doesn't need to have special logic :thinking:), but I'll probably just use eof eof for convenience.
+# I could use blank eof for an invalidated/old eou (I might have to introduce bou notation again, so the first pass of the internally-encoded process doesn't need to have special logic 🤔), but I'll probably just use eof eof for convenience (I can always crush a complex cell into an eof eof). And that means I'll have to change the encoding of 1...
+## TODO: Proposed new encoding: eou: blank blank ; 0: blank eof (this also helps bc the eof counts as 0 in rule 124 so we can just check the first cell maybe) ; 1: eof blank ; bou: eof eof (don't overwrite cells directly, but 1 behind, so the next cell will have information enough to complete its print) #this would require modifying almost all of the program, but may be necessary for continuing.
 # The external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou.
 
 #read in the input (until a non-1-or-0 separator character is found)
@@ -75,7 +78,9 @@
 
 460 go 800
 
-500 go 1000 #we've read the newline... that means we're done translating
+#we've read the newline... that means we're done translating
+500 right #advance on to first complex character
+501 go 1000 #print first line
 
 800 left
 801 if eof
@@ -86,15 +91,15 @@
 #check if we've already translated every character
 820 go 100
 
-#print the line
-#I started on the sep, maybe I'll revise that later
-1000 right #now we're on the first complex character
-1002 if blank
+#print the line, (if you're on the first complex character of the line)
+1000 if blank
 1010 go 1110 #we hit the eou, so we must go back on the tape to print sep
 1011 right
 1012 out #this will be blank for 0 and eof for 1
+1013 right
 1020 go 1000 #loop
 
+#go back to the sep and print the sep
 1110 left
 1120 if eof
 1121 go 1110

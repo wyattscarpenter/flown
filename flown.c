@@ -12,7 +12,7 @@ unsigned char tape[INT_MAX/2];
 
 unsigned char instructions[USHRT_MAX];
 
-unsigned short instruction_arguments[USHRT_MAX];
+unsigned short instruction_arguments[USHRT_MAX]; //this is an unsigned short so that it can store indices to other instructions
 
 int main(int argc, char **argv){
   char debug = 0;
@@ -36,11 +36,11 @@ int main(int argc, char **argv){
   if(!file){
      printf("Input file %s can't be opened for reading, probably doesn't exist.\n", argv[file_index_in_argv]);
      if(!strcmp(argv[file_index_in_argv],"-d")){
-       puts("Hey! It looks like you've specified -d without a flown script file, causing -d to be interpreted as the file name. You probably didn't mean to do that. Let me remind you:");
+       puts("Hey! It looks like you've specified -d without a flown script file, causing -d to be interpreted as the file name. You probably didn't mean to do that, especially because I can't find that file. Let me remind you:");
        puts("USAGE: input | flown [-d] script.fln | output");
-       return -3;
+       return -3; //script file "-d", specifically, not found
      }
-     return -2;
+     return -2; //script file not found
   }
   dprintf("%s\n", "parse");
   int c;
