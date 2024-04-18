@@ -111,7 +111,7 @@ int main(int argc, char **argv){
   unsigned int tapehead = 1;
   tape[0] = EOF;
   unsigned char skip = 0;
-  for(unsigned int i = 1; i<=highest_instruction_index; i++){ //we used to stop at sizeof(instructions)/sizeof(instructions[0]) but this caused a little lag.
+  for(unsigned int i = 1; i<=highest_instruction_index; i++){ // We used to stop at sizeof(instructions)/sizeof(instructions[0]) but this caused a little lag.
     instructions[i] && !skip && dprintf("%04u: %c(%d). tapehead (position %u) on the letter %u, \n", i, instructions[i], instruction_arguments[i], tapehead, tape[tapehead]); //print out the program for debug purposes
     //this would probably make way more sense if I tracked the rightmost point the tapehead has ever gone, and print the tape up to and only up to that point, but I couldn't be bothered.
     if(instructions[i] && !skip) { for(int t=1; tape[t] ; t++ ){dprintf("%c",tape[t]);}dprintf("\n"); }
@@ -123,6 +123,9 @@ int main(int argc, char **argv){
       break;
       case 'u':
         putchar(tape[tapehead]);
+      break;
+      case 'r': //METAFLOWN command ERR
+        putc(tape[tapehead], stderr);
       break;
       case 'e':
         if(!tapehead){eprintf("You tried to go off the left end of the tape at %d", i);fflush(stdin);}

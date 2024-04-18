@@ -49,6 +49,8 @@ In an environment with shebangs, like posix scripting, you should be able to she
 
 I probably would have added more metaflown commands but honestly I don't want to modify the parser (which is hairy) or add another compile step. Even though adding multi-cell if would be useful, and implementing functions would be fun.
 
+Well, OK, alright, I added one more command, ERR, which is like OUT except it prints to stderr. Even though it's just in the regular parser and works like a regular command and even requires a numerical position, like all the other commands, it's a METAFLOWN command because I don't think it's strictly necessary for the FLOWN paradigm. It just makes things easier (ish) for unix-inspired systems (all of them).
+
 Here are some example programs:
 
 cat.fln (just outputs its input, like piping to the unix utility cat)
