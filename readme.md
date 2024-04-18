@@ -121,7 +121,7 @@ tac.fln (prints full lines in reverse order)
 
 This is too long for the readme, see the file.
 
-fg.fln (the first example in the original FLOW paper is about detecting whether a text has an f or g in it. Here we output eof if true and blank if false)
+fg.fln (the first listing in the original FLOW paper is about detecting whether a text has an f or g in it. Here we output eof if true and blank if false)
 ```
 10 in
 20 if f
@@ -142,7 +142,7 @@ fg.fln (the first example in the original FLOW paper is about detecting whether 
 200 right
 210 out
 ```
-evenodd.fln (the first second example in the original FLOW paper is about detecting whether a text has an even or odd number of characters. Here we output eof if odd and blank if even)
+evenodd.fln (the second listing in the original FLOW paper is about detecting whether a text has an even or odd number of characters. Here we output eof if odd and blank if even)
 ```
 #even (starting with 0)
 10 in
@@ -167,7 +167,7 @@ evenodd.fln (the first second example in the original FLOW paper is about detect
 
 It would probably make the programming language better if we had something like the IT variable from FLOW and let you write arbitrary characters to the tape, but whatever. You may notice that it is (usually) impossible for this programming language to output any characters that aren't in the input; this is, uh, a security feature.
 
-The parser of this program is fairly brittle and unhelpful because I didn't want to spend a lot of time on this. If I had to do it over again, I would probably do it in a more modern language. I chose to do it in C because of how easy it is to work with plain byte arrays in C, but I think the better convenience functions / string handling of modern languages would have been worth the loss of conceptual banebonedness. Also, if this were a REAL programming language, making real executables would be an advantage of C, but as it stands I probably should have done this in javascript anyway just so I could have a web-based demo for this toy language.
+The parser of this program is fairly brittle and unhelpful because I didn't want to spend a lot of time on this. If I had to do it over again, I would probably do it in a more modern language. I chose to do it in C because of how easy it is to work with plain byte arrays in C, but I think the better convenience functions / string handling of modern languages would have been worth the loss of conceptual barebonedness. Also, if this were a REAL programming language, making real executables would be an advantage of C, but as it stands I probably should have done this in javascript anyway just so I could have a web-based demo for this toy language.
 
 FLOWN is trivially Turing-complete. Here's why:
 * The language (though not any particular implementation) has access to an infinite memory tape. The fact that this tape is left-ended does not make it any less infinitely long.
@@ -180,3 +180,9 @@ FLOWN is trivially Turing-complete. Here's why:
 Giving the program an infinite supply of eofs after the input is done was an interesting but necessary (therefore I don't feel bad about it—my hand was forced! Albeit forced by my other design decisions.) design choice. Firstly, I hate look-before-you-leap programming, so in FLOWN one has to write the eof character to the tape to check it. rev.fln, above, shows the computational/theoretical/practical necessity of presenting the eof symbol instead of just, say, crashing on attempt to read after input end, which I admit I would find pretty funny. I think technically you could get away with crashing if you had a non-deterministic FLOWN machine, or NFLOWN, the same way a Nondeterministic Pushdown Automata (NPDA) can recognize all even-length palindromes but a Deterministic Pushdown Automata can't.
 
 You may want to pipe the output of some flown programs to the unix utility `less`, as it will automatically display the nonprinting characters of eof and blank.
+
+You can find the original FLOW paper documenting FLOW, the language that FLOWN is inspired by, wherever fine academic publications are provided: “FLOW: A teaching language for computer programming in the humanities” by Jef Raskin, Computers and the Humanities, Vol. 8, pp. 231-237. PERGAMON PRESS, 1974. Printed in the U.S.A.
+
+TODO: Finish 124.fln, possibly involving an additional compiler step.
+
+TODO: More-robust testing script.
