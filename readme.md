@@ -187,6 +187,8 @@ You may want to pipe the output of some flown programs to the unix utility `less
 
 You can find the original FLOW paper documenting FLOW, the language that FLOWN is inspired by, wherever fine academic publications are provided: “FLOW: A teaching language for computer programming in the humanities” by Jef Raskin, Computers and the Humanities, Vol. 8, pp. 231-237. PERGAMON PRESS, 1974. Printed in the U.S.A.
 
+I have considered creating a higher-level language, which I would probably call "plown", which would compile down to flown; making such a program would probably be easier than completing certain example programs by hand! However, I basically lost interest before getting around to doing this.
+
 TODO: Finish 124.fln, possibly involving an additional compiler step.
 
 TODO: More-robust testing script.
