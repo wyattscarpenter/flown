@@ -1,4 +1,4 @@
-# I'm completely unsure about the wisdom of this form for plown to have. I've also lost interest in plown in general.
+# I'm completely unsure about the wisdom of this form for plown to have. I've also lost interest in plown in general. In fact, if I were to create a language that compiles down to flown, it would probably just be a normal language that happens to have flown as a backnd, not a closely-coupled language like plown might be. Regardless, I reluctantly mark this file TODO in case I want to come back to it later. (Once plown is complete, this branch will probably be merged into the main branch, in git.). But it should be done more-or-less after every other task I might want to do!
 
 # Plown is a very small programming language that compiles to flown. It consists mostly of vector-if statements and loop constructs. It can be run in python (note: will this be true? edit: no. But maybe some day) or in plown itself; both self-hosted and not-self-hosted, which makes bootstrapping easier.
 # The plown compiler should be piped all of its input and outputs all of its output to system out, like flown or any good unix program should. It can also stderr.
