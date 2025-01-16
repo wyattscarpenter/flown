@@ -1,3 +1,5 @@
+# I'm completely unsure about the wisdom of this form for plown to have. I've also lost interest in plown in general.
+
 # Plown is a very small programming language that compiles to flown. It consists mostly of vector-if statements and loop constructs. It can be run in python (note: will this be true? edit: no. But maybe some day) or in plown itself; both self-hosted and not-self-hosted, which makes bootstrapping easier.
 # The plown compiler should be piped all of its input and outputs all of its output to system out, like flown or any good unix program should. It can also stderr.
 # It's actually more of a preprocessor, and its outputs can be slipped into a flown script...
