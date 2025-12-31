@@ -1,112 +1,807 @@
 #this program takes an input of 1s and 0s, then a row-separator character of your choice, which may not be 0, 1, 0x00 or 0xFF (newline is a good choice). It outputs infinitely many rows of 0x00 and 0xFF characters, separated by your specified row-separator, in accordance with rule 124, the horizontal reflection of rule 110 (see https://mathworld.wolfram.com/Rule110.html )
-
+ 
 #rule 124, the horizontal reflection of rule 110 (and thus, is bounded on the lefthand side):
 #111: 0
-#011: 1
-#101: 1
-#001: 0
 #110: 1
-#010: 1
+#101: 1
 #100: 1
+#011: 1
+#010: 1
+#001: 0
 #000: 0
 #For more information, see https://mathworld.wolfram.com/Rule110.html and https://en.wikipedia.org/wiki/Rule_110#Interesting_properties
 
 #The internal encoding ("complex characters") is not as svelte as ideal, since we need to have an explicit end-of-the-universe marker that expands to the right at lightspeed for easy printing... otherwise we'd never know when to stop printing any given row of the automaton. At least the tape is full of 0s to start with, so we don't need to explicitly populate the eou.
-# Internal symbol encoding:
+# Internal symbol encoding: 
 #blank blank: end-of-the-universe mark (eou)
-#eof eof: 1
-#eof blank: 0
-# I could use blank eof for an invalidated/old eou (I might have to introduce bou notation again, so the first pass of the internally-encoded process doesn't need to have special logic 🤔), but I'll probably just use eof eof for convenience (I can always crush a complex cell into an eof eof). And that means I'll have to change the encoding of 1...
-## TODO: Proposed new encoding: eou: blank blank ; 0: blank eof (this also helps bc the eof counts as 0 in rule 124 so we can just check the first cell maybe) ; 1: eof blank ; bou: eof eof (don't overwrite cells directly, but 1 behind, so the next cell will have information enough to complete its print) #this would require modifying almost all of the program, but may be necessary for continuing.
-# The external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou.
+#eof blank: 1
+#blank eof: 0
+#eof eof: beginning-of-the-universe mark
+# The external encoding is just printing blank for 0 and eof for 1, also the user-supplied separator for the user-supplied separator, which is like encoding the eou. (BOU's are technically read, externally as 0's, but prompt special behavior to branch right.)
+
+# Brief description of implementation:
+# Program reads and translates input to internal encoding, then runs iterator, which reads, prints, overwrites, and rewrites updated encoding according to rule 124.
+# Each iteration must write to right of old tape and replace old tape with BOU (eof eof), as there is no way to write blanks.
+# Iterations will be separated by BOU's on right as they are written.
+# Complexes are overwritten as they are read. Rightmost bit of triplet is always the cell read, excepting the initial read.
+# This continues until leftmost bou is read, which is interpreted as a 0 and triggers the final two writes (and new rightmost bou) before printing the separator. 
+# After separator is printed, and initial read begins again.
+
+# Comments indicate current position of tape relative to two-cell complex using the following syntax:
+# ( [x] x ) Where x can be e (known eof), b (known blank), ? (unknown character). Brackets indicate current position of tape, at that line. (For example, if a line reads "100 right #(? [?]), the comment indicates the tape's position AFTER "right" has been excecuted.)
 
 #read in the input (until a non-1-or-0 separator character is found)
 10 in
-11 out #debugging statement
+#11 out debugging statement
 #check it
 20 if 0
 21 go 30
 22 if 1
 23 go 30
-25 go 100 # we found the separator, move on!
+25 go 50 # we found the separator, move on!
 # advance input loop
 30 right
 31 go 10
 
-#translate the input
-#go back to the left edge
+#at this point it's e0110101010101[s]bbbbbb.
+
+#initial BOU (eof eof)
+#not strictly necessary but makes iterative logic consistent
+50 right #immediate right of separator
+55 in
+60 right #right of first eof
+65 in 
+70 left # 0101010s[e]ebb
+75 left # tapehead at separator 
+
+
+
+#translate the input (loop always begins at separator)
+#Go to left edge of tape. Read if 1 or 0, go to corresponding section.
 100 left
-110 if eof
+110 if eof #found left edge of untranslated data
 111 go 200
-112 go 100
-200 right # get on the first of the remaining input
+112 go 100 #loop
+
+200 right #get on the first of the remaining input
 210 if 1
 220 go 300
 230 if 0
 240 go 400
-250 go 500
+249 #no input remaining
+250 go 850 #on separator
+
+
 
 300 # we've read a 1
-310 in #overwrite to keep our place for next time
-#go right until the eou, making sure to skip over blanks in the 0-complexes
+310 in #OVERWRITE 1
+
+#go right until the eou
+#get to separator
 320 right
-321 if blank
-322 go 350 #this is the eou, we're on the first cell of its two-cell complex
-330 if eof #non-eou complex
-331 right
-332 go 320 #non-eou non-complex, so we'll just skip one, like regular
+321 if 1
+322 go 320
+323 if 0
+324 go 320
+325 #head at separator 
+330 right #at first cell of complex
 
-350 in #we found eou, write a 1 (eof eof)
-351 right
-352 in
+#check if eou
+340 if blank #at first cell
+341 go 370
+350 right #(e ?) second cell
+360 go 330
 
-360 go 800
+370 right #second cell
+375 if blank #found eou
+376 go 380
+377 go 330 #found bou
+
+380 left
+381 in #write 1 (eb)
+390 go 800
  
+
+
 400 #we've read a 0
 410 in #overwrite to keep our place for next time
 #go right until the eou, making sure to skip over blanks in the 0-complexes
+
+#get to separator
 420 right
-421 if blank
-422 go 450 #this is the eou, we're on the first cell of its two-cell complex
-430 if eof #non-eou complex
-431 right
-432 go 420 #non-eou non-complex, so we'll just skip one, like regular
+421 if 1
+422 go 420 
+430 if 0
+431 go 420
+435 right #at first cell of complex
 
-450 in #we found eou, write a 0 (eof blank)
-451 right
-452 #blank
+#check if cell eou
+440 if blank 
+441 go 470
+445 right
+450 go 435
 
-460 go 800
+470 right #second cell
+475 if blank #found eou
+476 go 480
+477 go 435
 
-#we've read the newline... that means we're done translating
-500 right #advance on to first complex character
-501 go 1000 #print first line
+480 in #write 0 (be)
+485 left #first cell
+490 go 800
 
+
+
+
+#DEBUG: Print then exit
+#From anywhere, go right until separator, print twice, then print everything written so far until two eou's in a row are read.
+#go right until blank (to ensure we are never left of separator)
+500 go 9999 #DEBUG
+501 right
+505 if blank
+510 go 520
+515 go 500
+520 left #left until special character
+525 if blank
+526 go 520
+530 if eof
+531 go 520
+535 out #print separator (will get printed twice)
+#right and print each cell until four blanks in a row are read. 
+540 out
+545 right
+550 if eof
+551 go 540
+560 out #on blank
+565 right
+570 if eof
+571 go 540
+575 out #on second blank
+580 right 
+585 if eof
+586 go 540
+590 out # on third blank
+595 right
+600 if eof
+601 go 540
+610 out #on fourth blank
+615 right 
+620 if eof
+621 go 540
+630 go 9999 #EXIT
+
+
+
+
+
+
+#we just translated a character at first (bb) on right 
+#skip left until separator
 800 left
 801 if eof
 802 go 800
 803 if blank
 804 go 800
-#we must be at the separator
-#check if we've already translated every character
-820 go 100
+810 #we must be at the separator   eeeee01[s]ee
+820 go 100 #check if we've already translated every character
 
-#print the line, (if you're on the first complex character of the line)
-1000 if blank
-1010 go 1110 #we hit the eou, so we must go back on the tape to print sep
-1011 right
-1012 out #this will be blank for 0 and eof for 1
-1013 right
-1020 go 1000 #loop
+850 # on separator, all characters done, write bou at end
 
-#go back to the sep and print the sep
+#right until eou
+851 right #([?] ?)
+852 if blank
+853 go 870
+854 right #(e [?])
+855 go 851 
+870 right #(b [?]) 
+871 if eof
+872 go 851
+
+880 #(b [b]) found eou, write bou
+881 in #(b [e])
+882 left 
+883 in #([e] e)
+#translation and ending bou finished writing
+
+#left until separator
+900 left 
+910 if eof
+915 go 900
+920 if blank
+925 go 900
+990 #on separator
+
+
+
+999 right 
+#PRINT FIRST LINE 
+#starting on the left of a cell, parses and prints cells left to right, skipping bou (e e)
+
+1000 if eof # ([?] ? )
+1001 go 1020
+1002 go 1030 
+
+1020 right # (e [?]) 
+1021 if eof #skip bou
+1022 go 999
+1024 left # ([e] b) 
+1025 out #print 1
+1026 right
+1028 go 999
+
+1030 right # (b [?]) 
+1031 if blank #found eou
+1032 go 1110
+1035 left #first cell
+1036 out #print 0
+1037 right #second cell
+1038 go 999
+
+#go left until separator and print
 1110 left
 1120 if eof
 1121 go 1110
 1130 if blank
 1131 go 1110
-1140 out #we must have reached the sep here.
+1140 out #print separator 
+#print complete
 
-#I guess we exit then lol
 
-#TODO: iterate forever, baby!
+
+
+
+#first read
+1200 #from separator, go right until first 1 or 0
+1201 right #([?] ?)
+1210 if blank
+1211 go 1250 
+1215 right #(e [?])
+1220 if eof #found bou (e [e])
+1221 go 1201 #loop
+#found 1
+1229 # (e [b])
+1230 in #overwrite
+1235 right #start of next cell
+1240 go 2100 #01?
+#found 0
+1250 right #(b [e])
+# 1251 if blank #DEBUG
+# 1252 go 500 #DEBUG error, (first blank should always be start of 0)
+1260 left #([b] e)
+1265 in #overwrite
+1270 right #(e [e])
+1271 right #start of next cell
+1275 go 2000 #00?
+
+
+#input is translated with bou at end, looks like esbb[1]010101beeee, tapehead on start of third complex (counting bou as first), second just overwritten
+#third complex is read, overwritte, and appropriate digit is written on write
+#tapehead goes left to bou, then to next bou. If next bou is immediate, write last two digits assuming next two reads are 0
+#if next bou is not immediate, go to immediate right of bou and loop at 2X00
+
+#ITERATOR 
+
+#READ THIRD CELL
+#Starting at first cell of third complex, check for 1 or 0 
+#overwrite and send to appropriate next step
+
+2000 #00? 
+# ([?] ?)
+2010 if blank 
+2011 go 2030
+2015 right #(e [?])
+2017 if eof #error
+2018 go 500
+2020 in #(e [e])
+2021 right #first cell on right
+2025 go 3100 #001
+2030 right #(b [?])
+2035 if blank #error
+2036 go 500
+2040 left #([b] e)
+2045 in #overwrite ([e] e)
+2050 right
+2055 right #first cell on right
+2060 go 3000  #000
+2099 go 9900
+
+#01?
+# ([?] ?)
+2110 if blank 
+2111 go 2130
+2115 right #(e [?])
+2117 if eof #error
+2118 go 500
+2120 in #(e [e])
+2121 right #first cell on right
+2125 go 3300 #011
+2130 right #(b [?])
+2135 if blank #error
+2136 go 500
+2140 left #([b] e)
+2145 in #overwrite ([e] e)
+2150 right
+2155 right #first cell on right
+2160 go 3200  #010
+2199 go 9900
+
+#10?
+# ([?] ?)
+2210 if blank 
+2211 go 2230
+2215 right #(e [?])
+2217 if eof #error
+2218 go 500
+2220 in #(e [e])
+2221 right #first cell on right
+2225 go 3500 #101
+2230 right #(b [?])
+2235 if blank #error
+2236 go 500
+2240 left #([b] e)
+2245 in #overwrite ([e] e)
+2250 right
+2255 right #first cell on right
+2260 go 3400  #100
+2299 go 9900
+
+#11?
+# ([?] ?)
+2310 if blank 
+2311 go 2330
+2315 right #(e [?])
+2317 if eof #error
+2318 go 500
+2320 in #(e [e])
+2321 right #first cell on right
+2325 go 3700 #111
+2330 right #(b [?])
+2335 if blank #error
+2336 go 500
+2340 left #([b] e)
+2345 in #overwrite ([e] e)
+2350 right
+2355 right #first cell on right
+2360 go 3600  #110
+2399 go 9900
+
+
+#WRITE & PRINT (0-50 is for normal cells, 50-100 is for eou and bou)
+# 0, 1, 7 are 0. 2-6 are 1.
+#starting on first cell right of last read complex
+#goes right until first eou, writes appropriate numbers
+#goes left until bou, then go left until next bou
+#if next bou is immediate, go to appropriate 4x00
+#if next bou is not immediate, go to first cell on right and loop at 2x000
+
+3000 #000 (0)
+#([?] ?) find eou
+3001 if blank
+3002 go 3006
+3003 right
+3004 right 
+3005 go 3001
+3006 right
+3007 if eof
+3008 go 3004
+3009 left #([b] b) found eou
+3010 out #PRINT
+3014 right #(b [e])
+3015 in #WRITE
+3016 left 
+#left until first bou
+3020 left # (? [?])
+3021 if eof
+3022 go 3027
+3023 left 
+3024 go 3020
+3027 left # ([?] e)
+3028 if blank
+3029 go 3020
+3040 left #(? [?]) found first bou
+3041 if blank
+3042 go 3049
+3043 left #([?] e)
+3044 if eof
+3045 go 4000 #last write done
+3046 go 3050
+3049 left
+3050 left #(? [?])
+3051 if blank
+3052 go 3049
+3053 left #([?] e)
+3054 if blank
+3055 go 3050
+3060 #found second bou
+3065 right 
+3070 right #([?] ?)
+3075 go 2000
+
+#TODO: WRITE 4000's
+#TODO: IMPLEMENT FINITE CHECK (POSSIBLY AT 1100)
+
+3100 #001 (0)
+3101 if blank
+3102 go 3106
+3103 right
+3104 right 
+3105 go 3101
+3106 right
+3107 if eof
+3108 go 3104
+3109 left #([b] b) found eou
+3110 out #PRINT
+3114 right #(b [e])
+3115 in #WRITE
+3116 left 
+3120 left # (? [?])
+3121 if eof
+3122 go 3127
+3123 left 
+3124 go 3120
+3127 left # ([?] e)
+3128 if blank
+3129 go 3120
+3140 left #(? [?]) found first bou
+3141 if blank
+3142 go 3149
+3143 left #([?] e)
+3144 if eof
+3145 go 4100 #last write done
+3146 go 3150
+3149 left
+3150 left #(? [?])
+3151 if blank
+3152 go 3149
+3153 left #([?] e)
+3154 if blank
+3155 go 3150
+3160 #found second bou
+3165 right 
+3170 right #([?] ?)
+3175 go 2100
+
+3200 #010 (1)
+3201 if blank
+3202 go 3206
+3203 right
+3204 right 
+3205 go 3201
+3206 right
+3207 if eof
+3208 go 3204
+3209 left #([b] b) found eou
+3210 in #WRITE
+3214 out #PRINT
+3220 left # (? [?])
+3221 if eof
+3222 go 3227
+3223 left 
+3224 go 3220
+3227 left # ([?] e)
+3228 if blank
+3229 go 3220
+3240 left #(? [?]) found first bou
+3241 if blank
+3242 go 3249
+3243 left #([?] e)
+3244 if eof
+3245 go 4200 #last write done
+3246 go 3250
+3249 left
+3250 left #(? [?])
+3251 if blank
+3252 go 3249
+3253 left #([?] e)
+3254 if blank
+3255 go 3250
+3260 #found second bou
+3265 right 
+3270 right #([?] ?)
+3275 go 2200
+
+3300 #011 (1)
+3301 if blank
+3302 go 3306
+3303 right
+3304 right 
+3305 go 3301
+3306 right
+3307 if eof
+3308 go 3304
+3309 left #([b] b) found eou
+3310 in #WRITE
+3315 out #PRINT
+3320 left # (? [?])
+3321 if eof
+3322 go 3327
+3323 left 
+3324 go 3320
+3327 left # ([?] e)
+3328 if blank
+3329 go 3320
+3340 left #(? [?]) found first bou
+3341 if blank
+3342 go 3349
+3343 left #([?] e)
+3344 if eof
+3345 go 4300 #last write done
+3346 go 3350
+3349 left
+3350 left #(? [?])
+3351 if blank
+3352 go 3349
+3353 left #([?] e)
+3354 if blank
+3355 go 3350
+3360 #found second bou
+3365 right 
+3370 right #([?] ?)
+3375 go 2300
+
+3400 #100 (1)
+3401 if blank
+3402 go 3406
+3403 right
+3404 right 
+3405 go 3401
+3406 right
+3407 if eof
+3408 go 3404
+3409 left #([b] b) found eou
+3410 in #WRITE
+3415 out #PRINT
+3420 left # (? [?])
+3421 if eof
+3422 go 3427
+3423 left 
+3424 go 3420
+3427 left # ([?] e)
+3428 if blank
+3429 go 3420
+3440 left #(? [?]) found first bou
+3441 if blank
+3442 go 3449
+3443 left #([?] e)
+3444 if eof
+3445 go 4000 #last write done
+3446 go 3450
+3449 left
+3450 left #(? [?])
+3451 if blank
+3452 go 3449
+3453 left #([?] e)
+3454 if blank
+3455 go 3450
+3460 #found second bou
+3465 right 
+3470 right #([?] ?)
+3475 go 2000
+
+3500 #101 (1)
+3501 if blank
+3502 go 3506
+3503 right
+3504 right 
+3505 go 3501
+3506 right
+3507 if eof
+3508 go 3504
+3509 left #([b] b) found eou
+3510 in #WRITE
+3515 out #PRINT
+3520 left # (? [?])
+3521 if eof
+3522 go 3527
+3523 left 
+3524 go 3520
+3527 left # ([?] e)
+3528 if blank
+3529 go 3520
+3540 left #(? [?]) found first bou
+3541 if blank
+3542 go 3549
+3543 left #([?] e)
+3544 if eof
+3545 go 4100 #last write done
+3546 go 3550
+3549 left
+3550 left #(? [?])
+3551 if blank
+3552 go 3549
+3553 left #([?] e)
+3554 if blank
+3555 go 3550
+3560 #found second bou
+3565 right 
+3570 right #([?] ?)
+3575 go 2100
+
+3600 #110 (1)
+3601 if blank
+3602 go 3606
+3603 right
+3604 right 
+3605 go 3601
+3606 right
+3607 if eof
+3608 go 3604
+3609 left #([b] b) found eou
+3610 in #WRITE
+3615 out #PRINT
+3620 left # (? [?])
+3621 if eof
+3622 go 3627
+3623 left 
+3624 go 3620
+3627 left # ([?] e)
+3628 if blank
+3629 go 3620
+3640 left #(? [?]) found first bou
+3641 if blank
+3642 go 3649
+3643 left #([?] e)
+3644 if eof
+3645 go 4200 #last write done
+3646 go 3650
+3649 left
+3650 left #(? [?])
+3651 if blank
+3652 go 3649
+3653 left #([?] e)
+3654 if blank
+3655 go 3650
+3660 #found second bou
+3665 right 
+3670 right #([?] ?)
+3675 go 2200
+
+3700 #111 (0)
+3701 if blank
+3702 go 3706
+3703 right
+3704 right 
+3705 go 3701
+3706 right
+3707 if eof
+3708 go 3704
+3709 left #([b] b) found eou
+3710 out #PRINT
+3714 right #(b [e])
+3715 in #WRITE
+3716 left 
+3720 left # (? [?])
+3721 if eof
+3722 go 3727
+3723 left 
+3724 go 3720
+3727 left # ([?] e)
+3728 if blank
+3729 go 3720
+3740 left #(? [?]) found first bou
+3741 if blank
+3742 go 3749
+3743 left #([?] e)
+3744 if eof
+3745 go 4300 #last write done
+3746 go 3750
+3749 left
+3750 left #(? [?])
+3751 if blank
+3752 go 3749
+3753 left #([?] e)
+3754 if blank
+3755 go 3750
+3760 #found second bou
+3765 right 
+3770 right #([?] ?)
+3775 go 2300
+
+
+#if read two consecutive bou's in 3000's, stores last two digits read
+#writes & prints appropriate last two digits
+#then writes ending bou
+#loops back at 1110 
+4000 #00 (000 0, 000 0)
+#([e] e)
+#right until eou
+4001 right 
+4002 right 
+4003 right 
+4005 right #([?] ?)
+4006 if eof
+4007 go 4003
+4008 right #(b [?])
+4009 if blank
+4010 go 4020 #found eou
+4011 go 4005
+#write 0 0 (b [b])
+4020 out #PRINT first 0
+4021 in #WRITE first 0
+4025 right
+4026 right 
+4027 out #PRINT second 0
+4028 in #WRITE second 0
+4030 right #([b] b)
+4090 go 4500
+
+4100 #01 (010 1, 100 1)
+4101 right 
+4102 right 
+4103 right 
+4105 right #([?] ?)
+4106 if eof
+4107 go 4103
+4108 right #(b [?])
+4109 if blank
+4110 go 4120 #found eou
+4111 go 4105
+4120 left #write 1 1 
+4121 in #WRITE first 1 ([e] b)
+4122 out #PRINT 
+4123 right
+4124 right
+4125 in #WRITE second 1 ([e] b)
+4126 out #PRINT
+4130 right
+4135 right ([b] b)
+4190 go 4500
+
+4200 #10 (100 1, 000 0)
+4201 right 
+4202 right 
+4203 right 
+4205 right #([?] ?)
+4206 if eof
+4207 go 4203
+4208 right #(b [?])
+4209 if blank
+4210 go 4220 #found eou
+4211 go 4205
+4220 left #write 1 0 
+4221 in #WRITE first 1 ([e] b)
+4222 out #PRINT
+4223 right
+4224 right
+4225 right #(b [b])
+4226 out #PRINT second 0
+4227 in #WRITE second 0
+4230 right #10([b] b)
+4290 go 4500
+
+4300 go 4100 #11 (110 1, 100 1)
+
+4500 #write ending bou
+#??([b] b)
+4520 in
+4525 right
+4530 in
+
+#LOOP
+4600 go 1110 
+
+
+
+
+
+
+#DEBUG, indicates reached end of program instead of exiting directly 
+#right until any blank, then print 3 blank to indicate end (should see 3 blank then sep twice)
+9900 if blank
+9901 go 9910
+9905 right
+9906 go 9900
+9910 out #blank
+9911 out
+9912 out 
+9998 go 500 #print then exit if program gets to end
+
+#test 1
+#1010101001 input
+#11111111011 expected output
+#111111110 output
+
+#test 2
+#1001010001
+#11011110011
+#11011110011
